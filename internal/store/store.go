@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,16 +27,28 @@ const (
 	ErrNotFound = storeErr("not found")
 )
 
+// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
+// Add a logger field to the Store,
 type Store struct {
-	dir string
+	dir    string
+	logger *log.Logger
 }
 
-func New(dir string) (*Store, error) {
+// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
+// update store.New to accept a logger,
+// and use the injected logger in the store package.
+func New(
+	dir string,
+	// update store.New to accept a logger,
+	logger *log.Logger,
+) (*Store, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, err
 	}
 	return &Store{
 		dir: dir,
+		// and use the injected logger in the store package.
+		logger: logger,
 	}, nil
 }
 

@@ -12,26 +12,38 @@ import (
 	"boot.dev/linko/internal/store"
 )
 
+// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
+// Add a logger field to the server struct,
+// and update server logging to use that injected logger.
 type server struct {
 	httpServer *http.Server
 	store      store.Store
 	cancel     context.CancelFunc
+	logger     *log.Logger
 }
 
-func newServer(store store.Store, port int, cancel context.CancelFunc) *server {
+func newServer(
+	store store.Store,
+	port int,
+	cancel context.CancelFunc,
+	accessLogger *log.Logger,
+) *server {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
 		Addr: fmt.Sprintf(":%d", port),
 		// Ch 2. Logging Lv 3. Logging Requests
 		// we can wrap the entire mux with the middleware, so that all requests are logged:
-		Handler: requestLogger(logger)(mux),
+		// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
+		// Use the access logger for server/request logs
+		Handler: requestLogger(accessLogger)(mux),
 	}
 
 	s := &server{
 		httpServer: srv,
 		store:      store,
 		cancel:     cancel,
+		logger:     accessLogger,
 	}
 
 	mux.HandleFunc("GET /", s.handlerIndex)
@@ -57,7 +69,7 @@ func (s *server) start() error {
 	// ln.Addr() returns a net.Addr interface.
 	if addr, ok := ln.Addr().(*net.TCPAddr); ok {
 		httpPort := addr.Port
-		logger.Printf("Linko is running on http://localhost:%d\n", httpPort)
+		s.logger.Printf("Linko is running on http://localhost:%d\n", httpPort)
 	}
 
 	if err := s.httpServer.Serve(ln); !errors.Is(err, http.ErrServerClosed) {
@@ -68,9 +80,6 @@ func (s *server) start() error {
 }
 
 func (s *server) shutdown(ctx context.Context) error {
-	// Ch 1. Observability Lv 3. What Is Observability?
-	// When the server shuts down (before it exits), print:
-	logger.Println("Linko is shutting down")
 	return s.httpServer.Shutdown(ctx)
 }
 
