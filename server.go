@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -55,7 +54,7 @@ func (s *server) start() error {
 	// ln.Addr() returns a net.Addr interface.
 	if addr, ok := ln.Addr().(*net.TCPAddr); ok {
 		httpPort := addr.Port
-		log.Printf("Linko is running on http://localhost:%d\n", httpPort)
+		logger.Printf("Linko is running on http://localhost:%d\n", httpPort)
 	}
 
 	if err := s.httpServer.Serve(ln); !errors.Is(err, http.ErrServerClosed) {
@@ -68,7 +67,7 @@ func (s *server) start() error {
 func (s *server) shutdown(ctx context.Context) error {
 	// Ch 1. Observability Lv 3. What Is Observability?
 	// When the server shuts down (before it exits), print:
-	log.Println("Linko is shutting down")
+	logger.Println("Linko is shutting down")
 	return s.httpServer.Shutdown(ctx)
 }
 
