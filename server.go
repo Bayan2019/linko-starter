@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -21,8 +22,10 @@ func newServer(store store.Store, port int, cancel context.CancelFunc) *server {
 	mux := http.NewServeMux()
 
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", port),
-		Handler: mux,
+		Addr: fmt.Sprintf(":%d", port),
+		// Ch 2. Logging Lv 3. Logging Requests
+		// we can wrap the entire mux with the middleware, so that all requests are logged:
+		Handler: requestLogger(logger)(mux),
 	}
 
 	s := &server{
@@ -78,4 +81,28 @@ func (s *server) handlerShutdown(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	go s.cancel()
+}
+
+////// accommodating functions
+////// accommodating functions
+////// accommodating functions
+////// accommodating functions
+////// accommodating functions
+////// accommodating functions
+////// accommodating functions
+////// accommodating functions
+////// accommodating functions
+////// accommodating functions
+////// accommodating functions
+
+// Ch 2. Logging Lv 3. Logging Requests
+// Implement the requestLogger middleware shown above,
+// and update its log output to use this format:
+func requestLogger(logger *log.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+			logger.Printf("Served request: %s %s", r.Method, r.URL.Path)
+		})
+	}
 }
