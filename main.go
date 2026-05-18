@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -106,7 +106,7 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	// use the standard logger for your Store and shutdown messages
 	st, err := store.New(dataDir, logger)
 	if err != nil {
-		logger.Printf("failed to create store: %v\n", err)
+		logger.Info(fmt.Sprintf("failed to create store: %v\n", err))
 		return 1
 	}
 	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
@@ -122,7 +122,7 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	defer cancel()
 
 	if err := s.shutdown(shutdownCtx); err != nil {
-		logger.Printf("failed to shutdown server: %v\n", err)
+		logger.Info(fmt.Sprintf("failed to shutdown server: %v\n", err))
 		return 1
 	}
 
@@ -130,16 +130,16 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	// When the server shuts down (before it exits), print:
 	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
 	// use the standard logger for your Store and shutdown messages
-	logger.Println("Linko is shutting down")
+	logger.Info("Linko is shutting down\n")
 	if serverErr != nil {
-		logger.Printf("server error: %v\n", serverErr)
+		logger.Info(fmt.Sprintf("server error: %v\n", serverErr))
 		return 1
 	}
 
 	return 0
 }
 
-func initializeLogger(logFile string) (*log.Logger, closeFunc, error) {
+func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 	if logFile != "" {
 		file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 		if err != nil {
@@ -166,14 +166,25 @@ func initializeLogger(logFile string) (*log.Logger, closeFunc, error) {
 			return nil
 		}
 
-		return log.New(multiWriter, "", log.LstdFlags), close, nil
+		// Ch 3. Structured Logging Lv 1. Slog Package
+		// Update your logger type to *slog.Logger,
+		// using slog.NewTextHandler.
+		// You can use nil handler options for now.
+		logger := slog.New(slog.NewTextHandler(multiWriter, nil))
+
+		return logger, close, nil
 	}
 	// Ch 2. Logging Lv 8. Logger Cleanup
 	// For the STDERR logger, return a no-op close function that returns nil.
 	close := func() error {
 		return nil
 	}
-	return log.New(os.Stderr, "", log.LstdFlags), close, nil
+	// Ch 3. Structured Logging Lv 1. Slog Package
+	// Update your logger type to *slog.Logger,
+	// using slog.NewTextHandler.
+	// You can use nil handler options for now.
+	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	return logger, close, nil
 }
 
 ////// accommodating functions

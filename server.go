@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -19,14 +19,14 @@ type server struct {
 	httpServer *http.Server
 	store      store.Store
 	cancel     context.CancelFunc
-	logger     *log.Logger
+	logger     *slog.Logger
 }
 
 func newServer(
 	store store.Store,
 	port int,
 	cancel context.CancelFunc,
-	accessLogger *log.Logger,
+	accessLogger *slog.Logger,
 ) *server {
 	mux := http.NewServeMux()
 
@@ -69,7 +69,7 @@ func (s *server) start() error {
 	// ln.Addr() returns a net.Addr interface.
 	if addr, ok := ln.Addr().(*net.TCPAddr); ok {
 		httpPort := addr.Port
-		s.logger.Printf("Linko is running on http://localhost:%d\n", httpPort)
+		s.logger.Info(fmt.Sprintf("Linko is running on http://localhost:%d\n", httpPort))
 	}
 
 	if err := s.httpServer.Serve(ln); !errors.Is(err, http.ErrServerClosed) {
@@ -107,11 +107,11 @@ func (s *server) handlerShutdown(w http.ResponseWriter, r *http.Request) {
 // Ch 2. Logging Lv 3. Logging Requests
 // Implement the requestLogger middleware shown above,
 // and update its log output to use this format:
-func requestLogger(logger *log.Logger) func(http.Handler) http.Handler {
+func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			next.ServeHTTP(w, r)
-			logger.Printf("Served request: %s %s", r.Method, r.URL.Path)
+			logger.Info(fmt.Sprintf("Served request: %s %s", r.Method, r.URL.Path))
 		})
 	}
 }

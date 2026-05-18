@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +31,7 @@ const (
 // Add a logger field to the Store,
 type Store struct {
 	dir    string
-	logger *log.Logger
+	logger *slog.Logger
 }
 
 // Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
@@ -40,7 +40,7 @@ type Store struct {
 func New(
 	dir string,
 	// update store.New to accept a logger,
-	logger *log.Logger,
+	logger *slog.Logger,
 ) (*Store, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (s *Store) Lookup(_ context.Context, short string) (string, error) {
 		return "", ErrNotFound
 	}
 	if err != nil {
-		s.logger.Printf("failed to read %s: %v\n", shortcodeFilepath, err)
+		s.logger.Info(fmt.Sprintf("failed to read %s: %v\n", shortcodeFilepath, err))
 		return "", err
 	}
 	return string(data), nil
