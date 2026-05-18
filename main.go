@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -106,7 +106,7 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	// use the standard logger for your Store and shutdown messages
 	st, err := store.New(dataDir, logger)
 	if err != nil {
-		logger.Info(fmt.Sprintf("failed to create store: %v\n", err))
+		logger.Error(fmt.Sprintf("failed to create store: %v\n", err))
 		return 1
 	}
 	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
@@ -122,7 +122,7 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	defer cancel()
 
 	if err := s.shutdown(shutdownCtx); err != nil {
-		logger.Info(fmt.Sprintf("failed to shutdown server: %v\n", err))
+		logger.Error(fmt.Sprintf("failed to shutdown server: %v\n", err))
 		return 1
 	}
 
@@ -130,9 +130,9 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	// When the server shuts down (before it exits), print:
 	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
 	// use the standard logger for your Store and shutdown messages
-	logger.Info("Linko is shutting down\n")
+	logger.Debug("Linko is shutting down")
 	if serverErr != nil {
-		logger.Info(fmt.Sprintf("server error: %v\n", serverErr))
+		logger.Error(fmt.Sprintf("server error: %v\n", serverErr))
 		return 1
 	}
 
@@ -140,6 +140,18 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 }
 
 func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
+	// Ch 3. Structured Logging Lv 3. Log Levels
+	handlers := []slog.Handler{
+		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level: slog.LevelDebug,
+		}),
+		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+			Level: slog.LevelError,
+		}),
+	}
+	// Ch 3. Structured Logging Lv 3. Log Levels
+	closers := []closeFunc{}
+
 	if logFile != "" {
 		file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 		if err != nil {
@@ -149,7 +161,6 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 		// Ch 2. Logging Lv 7. Buffered Logging
 		// wrap the file writer with bufio.NewWriterSize using an 8192 byte buffer.
 		bufferedFile := bufio.NewWriterSize(file, 8192)
-		multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
 		// Ch 2. Logging Lv 8. Logger Cleanup
 		// As you create your logger,
 		// also create a "close" function
@@ -165,26 +176,48 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 			}
 			return nil
 		}
+		closers = append(closers, close)
+		// multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
+		handlers = append(handlers, slog.NewTextHandler(bufferedFile, &slog.HandlerOptions{
+			Level: slog.LevelInfo,
+		}))
 
 		// Ch 3. Structured Logging Lv 1. Slog Package
 		// Update your logger type to *slog.Logger,
 		// using slog.NewTextHandler.
 		// You can use nil handler options for now.
-		logger := slog.New(slog.NewTextHandler(multiWriter, nil))
+		// logger := slog.New(slog.NewTextHandler(multiWriter, nil))
 
-		return logger, close, nil
 	}
 	// Ch 2. Logging Lv 8. Logger Cleanup
 	// For the STDERR logger, return a no-op close function that returns nil.
-	close := func() error {
-		return nil
+	// close = func() error {
+	// 	return nil
+	// }
+	logger := slog.New(slog.NewMultiHandler(
+		handlers...,
+	))
+	closer := func() error {
+		var errs []error
+		for _, close := range closers {
+			if err := close(); err != nil {
+				errs = append(errs, err)
+			}
+		}
+		return errors.Join(errs...)
 	}
-	// Ch 3. Structured Logging Lv 1. Slog Package
-	// Update your logger type to *slog.Logger,
-	// using slog.NewTextHandler.
-	// You can use nil handler options for now.
-	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	return logger, close, nil
+
+	// Ch 3. Structured Logging Lv 3. Log Levels
+	// Use slog.Handlers
+	// to configure your STDERR logs
+	// to include DEBUG and above,
+	// and your file logs to include INFO and above.
+	// Use slog.NewMultiHandler to combine both handlers into one logger
+	// used throughout the app.
+	logger = slog.New(slog.NewMultiHandler(
+		handlers...,
+	))
+	return logger, closer, nil
 }
 
 ////// accommodating functions
