@@ -142,10 +142,10 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 	// Ch 3. Structured Logging Lv 3. Log Levels
 	handlers := []slog.Handler{
-		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
 			Level: slog.LevelDebug,
 		}),
-		slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+		slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
 			Level: slog.LevelError,
 		}),
 	}
@@ -178,7 +178,7 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 		}
 		closers = append(closers, close)
 		// multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
-		handlers = append(handlers, slog.NewTextHandler(bufferedFile, &slog.HandlerOptions{
+		handlers = append(handlers, slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{
 			Level: slog.LevelInfo,
 		}))
 
