@@ -28,6 +28,11 @@ import (
 // 	log.LstdFlags,
 // )
 
+// Ch 2. Logging Lv 8. Logger Cleanup
+// As you create your logger,
+// also create a "close" function that cleans up any logger resources.
+type closeFunc func() error
+
 func main() {
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -54,11 +59,20 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 
 	// Ch 2. Logging Lv 5. Logger Configuration
 	// Add an initializeLogger helper.
-	logger, err := initializeLogger(initializeLoggerFile)
+	logger, close, err := initializeLogger(initializeLoggerFile)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		return 1
 	}
+	// Ch 2. Logging Lv 8. Logger Cleanup
+	// Call the close function before Linko exits.
+	// defer a wrapper that calls it
+	defer func() {
+		if err := close(); err != nil {
+			// and prints any cleanup error to STDERR.
+			fmt.Fprintf(os.Stderr, "Failed to close logger: %v\n", err)
+		}
+	}()
 
 	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
 	// Create two non-global loggers in run:
@@ -125,20 +139,41 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 	return 0
 }
 
-func initializeLogger(logFile string) (*log.Logger, error) {
+func initializeLogger(logFile string) (*log.Logger, closeFunc, error) {
 	if logFile != "" {
 		file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
 		if err != nil {
-			return nil, fmt.Errorf("failed to open log file: %w", err)
+			return nil, nil, fmt.Errorf("failed to open log file: %w", err)
 		}
-		defer file.Close()
-		// Ch 2. Logging Lv 6. Buffered Logging
+		// defer file.Close()
+		// Ch 2. Logging Lv 7. Buffered Logging
 		// wrap the file writer with bufio.NewWriterSize using an 8192 byte buffer.
 		bufferedFile := bufio.NewWriterSize(file, 8192)
 		multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
-		return log.New(multiWriter, "", log.LstdFlags), nil
+		// Ch 2. Logging Lv 8. Logger Cleanup
+		// As you create your logger,
+		// also create a "close" function
+		// that cleans up any logger resources.
+		close := func() error {
+			// close function should .Flush the buffered writer
+			if err := bufferedFile.Flush(); err != nil {
+				return fmt.Errorf("failed to flush log file: %w", err)
+			}
+			// and .Close the file.
+			if err := file.Close(); err != nil {
+				return fmt.Errorf("failed to close log file: %w", err)
+			}
+			return nil
+		}
+
+		return log.New(multiWriter, "", log.LstdFlags), close, nil
 	}
-	return log.New(os.Stderr, "", log.LstdFlags), nil
+	// Ch 2. Logging Lv 8. Logger Cleanup
+	// For the STDERR logger, return a no-op close function that returns nil.
+	close := func() error {
+		return nil
+	}
+	return log.New(os.Stderr, "", log.LstdFlags), close, nil
 }
 
 ////// accommodating functions
