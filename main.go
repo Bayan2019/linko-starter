@@ -143,10 +143,12 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 	// Ch 3. Structured Logging Lv 3. Log Levels
 	handlers := []slog.Handler{
 		slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
-			Level: slog.LevelDebug,
+			Level:       slog.LevelDebug,
+			ReplaceAttr: replaceAttr,
 		}),
 		slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
-			Level: slog.LevelError,
+			Level:       slog.LevelError,
+			ReplaceAttr: replaceAttr,
 		}),
 	}
 	// Ch 3. Structured Logging Lv 3. Log Levels
@@ -179,7 +181,8 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 		closers = append(closers, close)
 		// multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
 		handlers = append(handlers, slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{
-			Level: slog.LevelInfo,
+			Level:       slog.LevelInfo,
+			ReplaceAttr: replaceAttr,
 		}))
 
 		// Ch 3. Structured Logging Lv 1. Slog Package
@@ -231,6 +234,17 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 ////// accommodating functions
 ////// accommodating functions
 ////// accommodating functions
+
+func replaceAttr(groups []string, a slog.Attr) slog.Attr {
+	if a.Key == "error" {
+		err, ok := a.Value.Any().(error)
+		if !ok {
+			return a
+		}
+		return slog.String("error", fmt.Sprintf("%+v", err))
+	}
+	return a
+}
 
 func getEnv(key, fallback string) string {
 	value := os.Getenv(key)
