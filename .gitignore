@@ -4,3 +4,4 @@ linko
 vendor/
 *.log
 .env
+*.gz

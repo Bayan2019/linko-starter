@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -19,6 +18,7 @@ import (
 	"github.com/lmittmann/tint"
 	isatty "github.com/mattn/go-isatty"
 	pkgerr "github.com/pkg/errors"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 // Ch 2. Logging Lv 8. Logger Cleanup
@@ -138,51 +138,26 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 	closers := []closeFunc{}
 
 	if logFile != "" {
-		file, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o644)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to open log file: %w", err)
+		rotatingFile := &lumberjack.Logger{
+			Filename:   logFile,
+			MaxSize:    1,
+			MaxAge:     28,
+			MaxBackups: 10,
+			LocalTime:  false,
+			Compress:   true,
 		}
-		// defer file.Close()
-		// Ch 2. Logging Lv 7. Buffered Logging
-		// wrap the file writer with bufio.NewWriterSize using an 8192 byte buffer.
-		bufferedFile := bufio.NewWriterSize(file, 8192)
-		// Ch 2. Logging Lv 8. Logger Cleanup
-		// As you create your logger,
-		// also create a "close" function
-		// that cleans up any logger resources.
+		handlers = append(handlers, slog.NewJSONHandler(rotatingFile, &slog.HandlerOptions{
+			Level:       slog.LevelInfo,
+			ReplaceAttr: replaceAttr,
+		}))
 		close := func() error {
-			// close function should .Flush the buffered writer
-			if err := bufferedFile.Flush(); err != nil {
-				return fmt.Errorf("failed to flush log file: %w", err)
-			}
-			// and .Close the file.
-			if err := file.Close(); err != nil {
+			if err := rotatingFile.Close(); err != nil {
 				return fmt.Errorf("failed to close log file: %w", err)
 			}
 			return nil
 		}
 		closers = append(closers, close)
-		// multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
-		handlers = append(handlers,
-			// slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{
-			tint.NewHandler(bufferedFile, &tint.Options{
-				Level:       slog.LevelInfo,
-				ReplaceAttr: replaceAttr,
-				NoColor:     !(isatty.IsTerminal(os.Stderr.Fd()) || isatty.IsCygwinTerminal(os.Stderr.Fd())),
-			}))
-
-		// Ch 3. Structured Logging Lv 1. Slog Package
-		// Update your logger type to *slog.Logger,
-		// using slog.NewTextHandler.
-		// You can use nil handler options for now.
-		// logger := slog.New(slog.NewTextHandler(multiWriter, nil))
-
 	}
-	// Ch 2. Logging Lv 8. Logger Cleanup
-	// For the STDERR logger, return a no-op close function that returns nil.
-	// close = func() error {
-	// 	return nil
-	// }
 	logger := slog.New(slog.NewMultiHandler(
 		handlers...,
 	))
@@ -196,13 +171,6 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 		return errors.Join(errs...)
 	}
 
-	// Ch 3. Structured Logging Lv 3. Log Levels
-	// Use slog.Handlers
-	// to configure your STDERR logs
-	// to include DEBUG and above,
-	// and your file logs to include INFO and above.
-	// Use slog.NewMultiHandler to combine both handlers into one logger
-	// used throughout the app.
 	logger = slog.New(slog.NewMultiHandler(
 		handlers...,
 	))
