@@ -16,6 +16,8 @@ import (
 	"boot.dev/linko/internal/linkoerr"
 	"boot.dev/linko/internal/store"
 	"github.com/joho/godotenv"
+	"github.com/lmittmann/tint"
+	isatty "github.com/mattn/go-isatty"
 	pkgerr "github.com/pkg/errors"
 )
 
@@ -115,15 +117,21 @@ func run(
 }
 
 func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
+	// isTty := isatty.IsTerminal(os.Stderr.Fd()) || isatty.IsCygwinTerminal(os.Stderr.Fd())
+
 	// Ch 3. Structured Logging Lv 3. Log Levels
 	handlers := []slog.Handler{
-		slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		// slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		tint.NewHandler(os.Stderr, &tint.Options{
 			Level:       slog.LevelDebug,
 			ReplaceAttr: replaceAttr,
+			NoColor:     !(isatty.IsTerminal(os.Stderr.Fd()) || isatty.IsCygwinTerminal(os.Stderr.Fd())),
 		}),
-		slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		// slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		tint.NewHandler(os.Stderr, &tint.Options{
 			Level:       slog.LevelError,
 			ReplaceAttr: replaceAttr,
+			NoColor:     !(isatty.IsTerminal(os.Stderr.Fd()) || isatty.IsCygwinTerminal(os.Stderr.Fd())),
 		}),
 	}
 	// Ch 3. Structured Logging Lv 3. Log Levels
@@ -155,10 +163,13 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 		}
 		closers = append(closers, close)
 		// multiWriter := io.MultiWriter(os.Stderr, bufferedFile)
-		handlers = append(handlers, slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{
-			Level:       slog.LevelInfo,
-			ReplaceAttr: replaceAttr,
-		}))
+		handlers = append(handlers,
+			// slog.NewJSONHandler(bufferedFile, &slog.HandlerOptions{
+			tint.NewHandler(bufferedFile, &tint.Options{
+				Level:       slog.LevelInfo,
+				ReplaceAttr: replaceAttr,
+				NoColor:     !(isatty.IsTerminal(os.Stderr.Fd()) || isatty.IsCygwinTerminal(os.Stderr.Fd())),
+			}))
 
 		// Ch 3. Structured Logging Lv 1. Slog Package
 		// Update your logger type to *slog.Logger,
