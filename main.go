@@ -70,11 +70,13 @@ func run(
 		}
 	}()
 
+	hostname, _ := os.Hostname()
+
 	logger = logger.With(
 		slog.String("git_sha", build.GitSHA),
 		slog.String("build_time", build.BuildTime),
-		// slog.String("env", os.Getenv("ENV")),
-		// slog.String("hostname", hostname),
+		slog.String("env", getEnv("ENV", "development")),
+		slog.String("hostname", hostname),
 	)
 
 	st, err := store.New(dataDir, logger)
