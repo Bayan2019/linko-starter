@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
@@ -38,7 +39,7 @@ func newServer(
 		// we can wrap the entire mux with the middleware, so that all requests are logged:
 		// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
 		// Use the access logger for server/request logs
-		Handler: requestLogger(accessLogger)(mux),
+		Handler: requestID()(requestLogger(accessLogger)(mux)),
 	}
 
 	s := &server{
@@ -156,6 +157,19 @@ func (s *server) handlerShutdown(w http.ResponseWriter, r *http.Request) {
 ////// accommodating functions
 ////// accommodating functions
 
+func requestID() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			id := r.Header.Get("X-Request-ID")
+			if id == "" {
+				id = rand.Text()
+			}
+			w.Header().Set("X-Request-ID", id)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // Ch 2. Logging Lv 3. Logging Requests
 // Implement the requestLogger middleware shown above,
 // and update its log output to use this format:
@@ -188,6 +202,7 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 
 				slog.Int("response_status", spyWriter.statusCode),
 				slog.Int("response_body_bytes", spyWriter.bytesWritten),
+				slog.String("request_id", spyWriter.Header().Get("X-Request-ID")),
 			}
 			if logCtx.Username != "" {
 				attrs = append(attrs, slog.String("user", logCtx.Username))
