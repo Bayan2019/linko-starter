@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"boot.dev/linko/internal/build"
 	"boot.dev/linko/internal/linkoerr"
 	"boot.dev/linko/internal/store"
 	"github.com/joho/godotenv"
@@ -39,7 +40,12 @@ func main() {
 	os.Exit(status)
 }
 
-func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir string) int {
+func run(
+	ctx context.Context,
+	cancel context.CancelFunc,
+	httpPort int,
+	dataDir string,
+) int {
 
 	// Ch 2. Logging Lv 5. Logger Configuration
 	// Assume that in production,
@@ -64,36 +70,13 @@ func run(ctx context.Context, cancel context.CancelFunc, httpPort int, dataDir s
 		}
 	}()
 
-	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
-	// Create two non-global loggers in run:
-	// An "standard" logger
-	// var standardLogger = log.New(
-	// 	// writes to STDERR
-	// 	os.Stderr,
-	// 	// with an DEBUG: prefix
-	// 	"DEBUG: ",
-	// 	log.LstdFlags,
-	// )
-	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
-	// accessFile, err := os.OpenFile("linko.access.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-	// if err != nil {
-	// 	standardLogger.Printf("Failed to open log file: %v", err)
-	// 	return 1
-	// }
-	// defer accessFile.Close()
+	logger = logger.With(
+		slog.String("git_sha", build.GitSHA),
+		slog.String("build_time", build.BuildTime),
+		// slog.String("env", os.Getenv("ENV")),
+		// slog.String("hostname", hostname),
+	)
 
-	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
-	// Create two non-global loggers in run:
-	// An "access" logger
-	// var accessLogger = log.New(
-	// 	// writes to a file named linko.access.log
-	// 	accessFile,
-	// 	// with an INFO: prefix
-	// 	"INFO: ",
-	// 	log.LstdFlags,
-	// )
-	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
-	// use the standard logger for your Store and shutdown messages
 	st, err := store.New(dataDir, logger)
 	if err != nil {
 		logger.Error(fmt.Sprintf("failed to create store: %v\n", err))
