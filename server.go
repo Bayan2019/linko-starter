@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"boot.dev/linko/internal/store"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
@@ -56,6 +58,8 @@ func newServer(
 	mux.Handle("GET /api/urls", s.authMiddleware(http.HandlerFunc(s.handlerListURLs)))
 	mux.HandleFunc("GET /{shortCode}", s.handlerRedirect)
 	mux.HandleFunc("POST /admin/shutdown", s.handlerShutdown)
+
+	mux.Handle("GET /metrics", promhttp.Handler())
 
 	return s
 }
