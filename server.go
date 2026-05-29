@@ -10,10 +10,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"boot.dev/linko/internal/store"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -41,7 +44,7 @@ func newServer(
 		// we can wrap the entire mux with the middleware, so that all requests are logged:
 		// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
 		// Use the access logger for server/request logs
-		Handler: requestID()(requestLogger(accessLogger)(mux)),
+		Handler: metricsMiddleware(requestID()(requestLogger(accessLogger)(mux))),
 	}
 
 	s := &server{
@@ -93,6 +96,16 @@ func (w *spyResponseWriter) Write(p []byte) (int, error) {
 func (w *spyResponseWriter) WriteHeader(statusCode int) {
 	w.statusCode = statusCode
 	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.status = code
+	r.ResponseWriter.WriteHeader(code)
 }
 
 const logContextKey contextKey = "log_context"
@@ -155,6 +168,15 @@ func (s *server) handlerShutdown(w http.ResponseWriter, r *http.Request) {
 	go s.cancel()
 }
 
+// //// variables //////
+var httpRequestsTotal = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "http_requests_total",
+		Help: "Total number of HTTP requests.",
+	},
+	[]string{"method", "path", "status"},
+)
+
 ////// accommodating functions
 ////// accommodating functions
 ////// accommodating functions
@@ -195,9 +217,25 @@ func redactIP(addr string) string {
 	return ip.String()
 }
 
-// Ch 2. Logging Lv 3. Logging Requests
-// Implement the requestLogger middleware shown above,
-// and update its log output to use this format:
+func metricsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rec := &statusRecorder{
+			ResponseWriter: w,
+			status:         http.StatusOK,
+		}
+
+		next.ServeHTTP(rec, r)
+
+		path := r.URL.Path
+		method := r.Method
+		status := strconv.Itoa(rec.status)
+
+		httpRequestsTotal.
+			WithLabelValues(method, path, status).
+			Inc()
+	})
+}
+
 func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
