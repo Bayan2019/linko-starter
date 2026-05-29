@@ -1,0 +1,43 @@
+File: linko
+Type: cpu
+Time: 2026-05-29 20:24:27 +05
+Duration: 30.12s, Total samples = 7.39s (24.53%)
+Showing nodes accounting for 7.31s, 98.92% of 7.39s total
+Dropped 74 nodes (cum <= 0.04s)
+      flat  flat%   sum%        cum   cum%
+     6.88s 93.10% 93.10%      6.93s 93.78%  golang.org/x/crypto/blowfish.encryptBlock
+     0.23s  3.11% 96.21%      7.16s 96.89%  golang.org/x/crypto/blowfish.ExpandKey
+     0.10s  1.35% 97.56%      0.10s  1.35%  syscall.rawsyscalln
+     0.05s  0.68% 98.24%      0.05s  0.68%  runtime.asyncPreempt
+     0.04s  0.54% 98.78%      0.04s  0.54%  runtime.pthread_cond_signal
+     0.01s  0.14% 98.92%      7.17s 97.02%  golang.org/x/crypto/bcrypt.expensiveBlowfishSetup
+         0     0% 98.92%      7.19s 97.29%  golang.org/x/crypto/bcrypt.GenerateFromPassword
+         0     0% 98.92%      7.19s 97.29%  golang.org/x/crypto/bcrypt.bcrypt
+         0     0% 98.92%      7.19s 97.29%  golang.org/x/crypto/bcrypt.newFromPassword
+         0     0% 98.92%      0.07s  0.95%  internal/poll.(*FD).Write
+         0     0% 98.92%      0.08s  1.08%  internal/poll.ignoringEINTRIO (inline)
+         0     0% 98.92%      0.06s  0.81%  log/slog.(*Logger).Info
+         0     0% 98.92%      0.06s  0.81%  log/slog.(*Logger).log
+         0     0% 98.92%      0.06s  0.81%  log/slog.(*MultiHandler).Handle
+         0     0% 98.92%      7.20s 97.43%  main.(*server).handlerRedirect
+         0     0% 98.92%      7.27s 98.38%  main.newServer.metricsMiddleware.func5
+         0     0% 98.92%      7.27s 98.38%  main.newServer.newServer.requestID.func1.func4
+         0     0% 98.92%      7.27s 98.38%  main.newServer.newServer.requestLogger.func2.func3
+         0     0% 98.92%      7.21s 97.56%  net/http.(*ServeMux).ServeHTTP
+         0     0% 98.92%      7.29s 98.65%  net/http.(*conn).serve
+         0     0% 98.92%      7.27s 98.38%  net/http.HandlerFunc.ServeHTTP
+         0     0% 98.92%      7.27s 98.38%  net/http.serverHandler.ServeHTTP
+         0     0% 98.92%      0.06s  0.81%  os.(*File).Write
+         0     0% 98.92%      0.06s  0.81%  os.(*File).write (inline)
+         0     0% 98.92%      0.04s  0.54%  runtime.findRunnable
+         0     0% 98.92%      0.07s  0.95%  runtime.mcall
+         0     0% 98.92%      0.04s  0.54%  runtime.notewakeup
+         0     0% 98.92%      0.05s  0.68%  runtime.park_m
+         0     0% 98.92%      0.06s  0.81%  runtime.schedule
+         0     0% 98.92%      0.04s  0.54%  runtime.semawakeup
+         0     0% 98.92%      0.04s  0.54%  runtime.startm
+         0     0% 98.92%      0.04s  0.54%  runtime.wakep
+         0     0% 98.92%      0.07s  0.95%  syscall.Write (inline)
+         0     0% 98.92%      0.09s  1.22%  syscall.syscall
+         0     0% 98.92%      0.10s  1.35%  syscall.syscalln
+         0     0% 98.92%      0.07s  0.95%  syscall.write

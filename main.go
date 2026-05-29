@@ -19,6 +19,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/lmittmann/tint"
 	isatty "github.com/mattn/go-isatty"
+
+	// nethttppprof "net/http/pprof"
 	pkgerr "github.com/pkg/errors"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
