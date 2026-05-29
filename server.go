@@ -176,6 +176,21 @@ func requestID() func(http.Handler) http.Handler {
 	}
 }
 
+func redactIP(addr string) string {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+	}
+	ip := net.ParseIP(host)
+	if ip == nil {
+		return host
+	}
+	if ip4 := ip.To4(); ip4 != nil {
+		return fmt.Sprintf("%d.%d.%d.x", ip4[0], ip4[1], ip4[2])
+	}
+	return ip.String()
+}
+
 // Ch 2. Logging Lv 3. Logging Requests
 // Implement the requestLogger middleware shown above,
 // and update its log output to use this format:
@@ -201,7 +216,8 @@ func requestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 				// "path", r.URL.Path,
 				slog.String("path", r.URL.Path),
 				// "client_ip", r.RemoteAddr,
-				slog.String("client_ip", r.RemoteAddr),
+				// slog.String("client_ip", r.RemoteAddr),
+				slog.String("client_ip", redactIP(r.RemoteAddr)),
 
 				slog.Duration("duration", time.Since(start)),
 				slog.Int("request_body_bytes", spyReader.bytesRead),
