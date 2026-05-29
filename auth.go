@@ -17,9 +17,9 @@ const UserContextKey contextKey = "user"
 var allowedUsers = map[string]string{
 	"frodo":   "$2a$10$B6O/n6teuCzpuh66jrUAdeaJ3WvXcxRkzpN0x7H.di9G9e/NGb9Me",
 	"samwise": "$2a$10$EWZpvYhUJtJcEMmm/IBOsOGIcpxUnGIVMRiDlN/nxl1RRwWGkJtty",
-	// frodo: "ofTheNineFingers"
+	// frodo: "ofTheNineFingers" "wrongPassword"
 	// samwise: "theStrong"
-	"saruman": "invalidFormat",
+	"saruman": "invalidFormat", // "badPassword"
 }
 
 func (s *server) authMiddleware(next http.Handler) http.Handler {

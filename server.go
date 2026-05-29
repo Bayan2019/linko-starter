@@ -15,6 +15,8 @@ import (
 
 	"boot.dev/linko/internal/store"
 
+	nethttppprof "net/http/pprof"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -63,6 +65,11 @@ func newServer(
 	mux.HandleFunc("POST /admin/shutdown", s.handlerShutdown)
 
 	mux.Handle("GET /metrics", promhttp.Handler())
+
+	mux.Handle("GET /debug/pprof/",
+		s.authMiddleware(http.HandlerFunc(nethttppprof.Index)))
+	mux.Handle("GET /debug/pprof/profile",
+		s.authMiddleware(http.HandlerFunc(nethttppprof.Profile)))
 
 	return s
 }
