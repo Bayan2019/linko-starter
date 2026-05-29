@@ -141,8 +141,9 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 
 	if logFile != "" {
 		rotatingFile := &lumberjack.Logger{
-			Filename:   logFile,
-			MaxSize:    1,
+			Filename: logFile,
+			// MaxSize:    1,
+			MaxSize:    500,
 			MaxAge:     28,
 			MaxBackups: 10,
 			LocalTime:  false,
