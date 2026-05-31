@@ -1,0 +1,34 @@
+File: linko
+Type: inuse_space
+Time: 2026-05-31 22:00:42 +05
+Duration: 30s, Total samples = 6802.16kB 
+Showing nodes accounting for 2606.41kB, 38.32% of 6802.16kB total
+      flat  flat%   sum%        cum   cum%
+ 4704.29kB 69.16% 69.16%  4704.29kB 69.16%  internal/bytealg.MakeNoZero
+ -902.59kB 13.27% 55.89% -2097.87kB 30.84%  compress/flate.NewWriter (inline)
+ -650.62kB  9.56% 46.32% -1195.29kB 17.57%  compress/flate.(*compressor).init
+ -544.67kB  8.01% 38.32%  -544.67kB  8.01%  compress/flate.newDeflateFast (inline)
+         0     0% 38.32% -2097.87kB 30.84%  compress/gzip.(*Writer).Write
+         0     0% 38.32%  4704.29kB 69.16%  main.(*server).handlerRedirect
+         0     0% 38.32% -2097.87kB 30.84%  main.newServer.(*server).authMiddleware.func10
+         0     0% 38.32%  2606.41kB 38.32%  main.newServer.metricsMiddleware.func5
+         0     0% 38.32%  2606.41kB 38.32%  main.newServer.newServer.requestID.func1.func4
+         0     0% 38.32%  2606.41kB 38.32%  main.newServer.newServer.requestLogger.func2.func3
+         0     0% 38.32%  2606.41kB 38.32%  net/http.(*ServeMux).ServeHTTP
+         0     0% 38.32%  2606.41kB 38.32%  net/http.(*conn).serve
+         0     0% 38.32%  2606.41kB 38.32%  net/http.HandlerFunc.ServeHTTP
+         0     0% 38.32%  2606.41kB 38.32%  net/http.serverHandler.ServeHTTP
+         0     0% 38.32% -2097.87kB 30.84%  net/http/pprof.Index
+         0     0% 38.32% -2097.87kB 30.84%  net/http/pprof.collectProfile
+         0     0% 38.32% -2097.87kB 30.84%  net/http/pprof.handler.ServeHTTP
+         0     0% 38.32% -2097.87kB 30.84%  net/http/pprof.handler.serveDeltaProfile
+         0     0% 38.32% -2097.87kB 30.84%  runtime/pprof.(*Profile).WriteTo
+         0     0% 38.32% -2097.87kB 30.84%  runtime/pprof.(*profileBuilder).appendLocsForStack
+         0     0% 38.32% -2097.87kB 30.84%  runtime/pprof.(*profileBuilder).emitLocation
+         0     0% 38.32% -2097.87kB 30.84%  runtime/pprof.(*profileBuilder).flush
+         0     0% 38.32% -2097.87kB 30.84%  runtime/pprof.writeHeap
+         0     0% 38.32% -2097.87kB 30.84%  runtime/pprof.writeHeapInternal
+         0     0% 38.32% -2097.87kB 30.84%  runtime/pprof.writeHeapProto
+         0     0% 38.32%  4704.29kB 69.16%  strings.(*Builder).Grow
+         0     0% 38.32%  4704.29kB 69.16%  strings.(*Builder).grow
+         0     0% 38.32%  4704.29kB 69.16%  strings.Repeat

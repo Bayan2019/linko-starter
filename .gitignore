@@ -5,3 +5,4 @@ vendor/
 *.log
 .env
 *.gz
+*.svg
