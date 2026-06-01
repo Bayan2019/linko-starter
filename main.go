@@ -41,7 +41,7 @@ func main() {
 	dataDir := flag.String("data", "./data", "directory to store data")
 	flag.Parse()
 
-	fmt.Printf("status := run(ctx, cancel, *httpPort, *dataDir)\n")
+	// fmt.Printf("status := run(ctx, cancel, *httpPort, *dataDir)\n")
 	status := run(ctx, cancel, *httpPort, *dataDir)
 	cancel()
 	os.Exit(status)
@@ -59,7 +59,7 @@ func run(
 		fmt.Fprintf(os.Stderr, "failed to initialize tracing: %v\n", err)
 		return 1
 	}
-	fmt.Printf("initTracing(ctx)\n")
+	// fmt.Printf("initTracing(ctx)\n")
 	defer func() {
 		if err := shutdownTracing(context.Background()); err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to shut down tracing: %v\n", err)
@@ -75,10 +75,7 @@ func run(
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		return 1
 	}
-	fmt.Printf("initializeLogger(initializeLoggerFile)\n")
-	// Ch 2. Logging Lv 8. Logger Cleanup
-	// Call the close function before Linko exits.
-	// defer a wrapper that calls it
+
 	defer func() {
 		if err := close(); err != nil {
 			// and prints any cleanup error to STDERR.
@@ -103,10 +100,10 @@ func run(
 	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
 	// Use the access logger for server/request logs
 	s := newServer(*st, httpPort, cancel, logger)
-	fmt.Printf("s := newServer(*st, httpPort, cancel, logger)\n")
+	// fmt.Printf("s := newServer(*st, httpPort, cancel, logger)\n")
 	var serverErr error
 	go func() {
-		fmt.Printf("serverErr = s.start()\n")
+		// fmt.Printf("serverErr = s.start()\n")
 		serverErr = s.start()
 	}()
 

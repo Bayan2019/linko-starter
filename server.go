@@ -40,7 +40,7 @@ func newServer(
 	accessLogger *slog.Logger,
 ) *server {
 	mux := http.NewServeMux()
-	fmt.Printf("http.NewServeMux()\n")
+	// fmt.Printf("http.NewServeMux()\n")
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
 		Handler: otelhttp.NewHandler(metricsMiddleware(requestID()(requestLogger(accessLogger)(mux))), "http.server"),
@@ -138,12 +138,12 @@ func httpError(
 }
 
 func (s *server) start() error {
-	fmt.Printf("s.httpServer.Addr: %s\n", s.httpServer.Addr)
+	// fmt.Printf("s.httpServer.Addr: %s\n", s.httpServer.Addr)
 	ln, err := net.Listen("tcp", s.httpServer.Addr)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("ln, err := net.Listen\n")
+	// fmt.Printf("ln, err := net.Listen\n")
 
 	// Ch 1. Observability Lv 3. What Is Observability?
 	// When the server starts, print the following message to the console,
