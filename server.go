@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 // Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
@@ -39,14 +40,10 @@ func newServer(
 	accessLogger *slog.Logger,
 ) *server {
 	mux := http.NewServeMux()
-
+	fmt.Printf("http.NewServeMux()\n")
 	srv := &http.Server{
-		Addr: fmt.Sprintf(":%d", port),
-		// Ch 2. Logging Lv 3. Logging Requests
-		// we can wrap the entire mux with the middleware, so that all requests are logged:
-		// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
-		// Use the access logger for server/request logs
-		Handler: metricsMiddleware(requestID()(requestLogger(accessLogger)(mux))),
+		Addr:    fmt.Sprintf(":%d", port),
+		Handler: otelhttp.NewHandler(metricsMiddleware(requestID()(requestLogger(accessLogger)(mux))), "http.server"),
 	}
 
 	s := &server{
@@ -141,10 +138,12 @@ func httpError(
 }
 
 func (s *server) start() error {
+	fmt.Printf("s.httpServer.Addr: %s\n", s.httpServer.Addr)
 	ln, err := net.Listen("tcp", s.httpServer.Addr)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("ln, err := net.Listen\n")
 
 	// Ch 1. Observability Lv 3. What Is Observability?
 	// When the server starts, print the following message to the console,

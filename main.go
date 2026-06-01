@@ -41,6 +41,7 @@ func main() {
 	dataDir := flag.String("data", "./data", "directory to store data")
 	flag.Parse()
 
+	fmt.Printf("status := run(ctx, cancel, *httpPort, *dataDir)\n")
 	status := run(ctx, cancel, *httpPort, *dataDir)
 	cancel()
 	os.Exit(status)
@@ -53,10 +54,18 @@ func run(
 	dataDir string,
 ) int {
 
-	// Ch 2. Logging Lv 5. Logger Configuration
-	// Assume that in production,
-	// Linko has a LINKO_LOG_FILE environment variable set.
-	// In local development and staging, it is not set.
+	shutdownTracing, err := initTracing(ctx)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to initialize tracing: %v\n", err)
+		return 1
+	}
+	fmt.Printf("initTracing(ctx)\n")
+	defer func() {
+		if err := shutdownTracing(context.Background()); err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to shut down tracing: %v\n", err)
+		}
+	}()
+
 	var initializeLoggerFile = getEnv("LINKO_LOG_FILE", "")
 
 	// Ch 2. Logging Lv 5. Logger Configuration
@@ -66,6 +75,7 @@ func run(
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %v\n", err)
 		return 1
 	}
+	fmt.Printf("initializeLogger(initializeLoggerFile)\n")
 	// Ch 2. Logging Lv 8. Logger Cleanup
 	// Call the close function before Linko exits.
 	// defer a wrapper that calls it
@@ -93,8 +103,10 @@ func run(
 	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
 	// Use the access logger for server/request logs
 	s := newServer(*st, httpPort, cancel, logger)
+	fmt.Printf("s := newServer(*st, httpPort, cancel, logger)\n")
 	var serverErr error
 	go func() {
+		fmt.Printf("serverErr = s.start()\n")
 		serverErr = s.start()
 	}()
 
@@ -107,10 +119,6 @@ func run(
 		return 1
 	}
 
-	// Ch 1. Observability Lv 3. What Is Observability?
-	// When the server shuts down (before it exits), print:
-	// Ch 2. Logging Lv 4. Global Logger vs. Dependency Injection
-	// use the standard logger for your Store and shutdown messages
 	logger.Debug("Linko is shutting down")
 	if serverErr != nil {
 		logger.Error(fmt.Sprintf("server error: %v\n", serverErr))
@@ -176,9 +184,6 @@ func initializeLogger(logFile string) (*slog.Logger, closeFunc, error) {
 		return errors.Join(errs...)
 	}
 
-	logger = slog.New(slog.NewMultiHandler(
-		handlers...,
-	))
 	return logger, closer, nil
 }
 
